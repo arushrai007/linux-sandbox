@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sandbox IDE</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #1e1e1e;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        #topbar {
+            padding: 10px;
+            background: #111;
+            display: flex;
+            gap: 10px;
+        }
+
+        #editor {
+            height: 60vh;
+        }
+
+        #output {
+            height: 30vh;
+            background: black;
+            padding: 10px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+
+        button, select {
+            padding: 6px 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="topbar">
+    <select id="language" onchange="changeLanguage()">
+        <option value="python">Python</option>
+        <option value="cpp">C++</option>
+        <option value="java">Java</option>
+    </select>
+
+    <button onclick="runCode()">▶ Run</button>
+</div>
+
+<div id="editor"></div>
+<div id="output"></div>
+
+<!-- ✅ Monaco Loader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+<script>
+    let editor;
+
+    require.config({
+        paths: {
+            vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs"
+        }
+    });
+
+    require(["vs/editor/editor.main"], function () {
+        editor = monaco.editor.create(document.getElementById("editor"), {
+            value: 'print("Hello World")',
+            language: "python",
+            theme: "vs-dark",
+            fontSize: 14
+        });
+    });
+
+    function changeLanguage() {
+        const lang = document.getElementById("language").value;
+
+        let monacoLang = "python";
+
+        if (lang === "cpp") monacoLang = "cpp";
+        if (lang === "java") monacoLang = "java";
+
+        monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
+    }
+
+    function runCode() {
+        const code = editor.getValue();
+        const language = document.getElementById("language").value;
+
+        fetch("http://127.0.0.1:5000/run", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ code, language })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("output").innerText = data.output;
+        })
+        .catch(err => {
+            document.getElementById("output").innerText = "Error: " + err;
+        });
+    }
+</script>
+
+</body>
+</html>
